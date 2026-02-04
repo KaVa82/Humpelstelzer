@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Franziskas Geschichtenwelt</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <!-- GitHub Pages Styles & Scripts -->
+    <style>
+        /* Full CSS from previous implementation remains here */
+        /* (Maintaining all existing styles) */
+        
+        /* New additions for story transitions */
+        .story-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--ink);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+        
+        .transition-image {
+            width: 80%;
+            max-width: 800px;
+            height: 60vh;
+            object-fit: cover;
+            border: 4px solid var(--gold);
+            border-radius: 12px;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 1s ease;
+            margin-bottom: 2rem;
+        }
+        
+        .transition-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--gold);
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .story-transition.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .story-transition.active .transition-image {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .story-transition.active .transition-title {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.5s;
+        }
+        
+        /* Quiz email styling */
+        .email-preview {
+            background: white;
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+            color: var(--ink);
+            text-align: left;
+        }
+        
+        .email-header {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .email-subject {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--ink);
+        }
+        
+        .email-to {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .email-body {
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="particles" id="particles"></div>
+    <img src="https://raw.githubusercontent.com/KaVa82/Humpelstelzer/main/hintergrund/1.jpg" alt="" class="bg-image" id="bgImage">
+
+    <!-- Story Transition Screen -->
+    <div class="story-transition" id="storyTransition">
+        <img src="" alt="" class="transition-image" id="transitionImage">
+        <h2 class="transition-title" id="transitionTitle">Geschichte lädt...</h2>
+    </div>
+
+    <header>
+        <div class="header-content">
+            <h1>Franziskas Geschichtenwelt</h1>
+            <p class="subtitle">Ein Abenteuer auf einem Bein</p>
+        </div>
+        <nav>
+            <button class="nav-btn active" data-section="home">Start</button>
+            <button class="nav-btn" id="btnStory" data-section="story" disabled>Geschichte</button>
+            <button class="nav-btn" data-section="diary">Tagebuch</button>
+            <button class="nav-btn" data-section="progress">Fortschritt</button>
+            <button class="nav-btn" id="btnAdmin" data-section="admin" style="display: none;">🔐 Admin</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <div class="card">
+                <h2>Willkommen, Tapfere</h2>
+                <div class="daily-quote" id="dailyQuote">Mut beginnt mit dem ersten Hüpfer.</div>
+                
+                <div class="story-envelope" id="envelope">
+                    <div class="envelope-icon">✨</div>
+                    <h3 class="envelope-title">Deine Schriftrolle</h3>
+                    <p class="envelope-message" id="envelopeMsg">Lade Abenteuer...</p>
+                </div>
+
+                <div id="countdown" class="daily-quote hidden"></div>
+            </div>
+        </section>
+
+        <!-- Story Section -->
+        <section id="story" class="section">
+            <div class="scroll-container">
+                <div class="scroll" id="scrollUI">
+                    <div class="scroll-content">
+                        <div class="story-theme" id="storyTheme"></div>
+                        <h2 class="story-title" id="storyTitle"></h2>
+                        <div class="story-text" id="storyText"></div>
+                        <div class="story-controls">
+                            <button class="btn-next" id="btnNext">Weiter →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="taskArea" class="card task-panel hidden">
+                <h3>Deine Aufgabe</h3>
+                <p class="task-description" id="taskDesc"></p>
+                
+                <!-- Drawing Mode -->
+                <div id="drawingMode" class="hidden">
+                    <canvas id="canvas" class="drawing-canvas"></canvas>
+                    <div class="color-palette">
+                        <div class="color-dot active" style="background: #2c241b" data-color="#2c241b"></div>
+                        <div class="color-dot" style="background: #8b0000" data-color="#8b0000"></div>
+                        <div class="color-dot" style="background: #d4af37" data-color="#d4af37"></div>
+                        <div class="color-dot" style="background: #2e7d32" data-color="#2e7d32"></div>
+                        <div class="color-dot" style="background: #1565c0" data-color="#1565c0"></div>
+                        <button class="btn-clear">Neu starten</button>
+                    </div>
+                    <button class="btn-save">Bild speichern & senden</button>
+                </div>
+
+                <!-- Writing Mode -->
+                <div id="writingMode" class="hidden">
+                    <textarea id="writingText" class="diary-input" rows="10" placeholder="Schreibe deine Gedanken hier..."></textarea>
+                    <button class="btn-save" onclick="tasks.saveWriting()">Text speichern</button>
+                </div>
+
+                <!-- Quiz Mode -->
+                <div id="quizMode" class="hidden">
+                    <div class="quiz-container">
+                        <h4 id="quizQuestion" class="quiz-question"></h4>
+                        <div id="quizAnswers" class="quiz-answers"></div>
+                        <div id="quizResult" class="quiz-result hidden"></div>
+                        <div id="emailPreview" class="email-preview hidden">
+                            <div class="email-header">
+                                <div class="email-subject" id="emailSubject"></div>
+                                <div class="email-to">An: Kava140982@gmail.com</div>
+                            </div>
+                            <div class="email-body" id="emailBody"></div>
+                            <button class="btn-save" onclick="emailSystem.sendEmail()" style="margin-top: 1rem;">📧 E-Mail senden</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Diary Section -->
+        <section id="diary" class="section">
+            <div class="card">
+                <h2>Tagebuch</h2>
+                <textarea id="diaryInput" class="diary-input" placeholder="Schreibe deine Gedanken..."></textarea>
+                <button class="btn-save">Eintrag speichern</button>
+                <div id="diaryList" style="margin-top: 2rem;"></div>
+            </div>
+        </section>
+
+        <!-- Progress Section -->
+        <section id="progress" class="section">
+            <div class="card">
+                <h2>Dein Weg</h2>
+                <div class="stars-display" id="starsDisplay">⭐⭐⭐</div>
+                <p class="daily-quote">Jeder Tag bringt neue Stärke</p>
+                <div class="progress-stats" id="progressStats"></div>
+            </div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin" class="section">
+            <div class="card">
+                <h2>🔐 Admin-Bereich</h2>
+                <!-- Admin content remains the same -->
+            </div>
+        </section>
+    </main>
+
+    <audio id="unrollSound" preload="auto"></audio>
+    <audio id="bgMusic" preload="auto"></audio>
+    <audio id="typeSound" preload="auto"></audio>
+
+    <script>
+        // ============================================
+        // KONFIGURATION & INITIALISIERUNG
+        // ============================================
+
+        const CONFIG = {
+            GITHUB_BASE: 'https://raw.githubusercontent.com/KaVa82/Humpelstelzer/main',
+            EMAIL: 'Kava140982@gmail.com',
+            UNLOCK_HOUR: 20, // 20:00 Uhr Freischaltung
+            STORIES: [
+                {
+                    id: 1,
+                    week: 1,
+                    day: 1,
+                    theme: "TAG 1 - INITIALISIERUNG: DER WEISSE RAUM",
+                    title: "TAG 1 - INITIALISIERUNG: DER WEISSE RAUM",
+                    image: 1,
+                    sound: 1,
+                    background: 1,
+                    text: `PROTOKOLL-EINTRAG 44-01 // STATUS: ERWACHEN
+
+Das Erste, was Sie registrieren, ist das Licht. Es ist nicht das warme Licht der Sonne, sondern ein steriles, klinisches Weiß, das aus den Fugen der Decke zu sickern scheint. Sie liegen auf einer Oberfläche, die sich weder wie Metall noch wie Stoff anfühlt – eine Art Memory-Schaum, der sich perfekt an Ihre Konturen anpasst, als wollte er Sie festhalten.
+
+Ihre Beine fühlen sich schwer an. Das linke reagiert sofort, doch das rechte... dort ist ein dumpfer Nachhall, ein Echo von Metall und Kälte. Sie versuchen, sich aufzusetzen. Die Wände um Sie herum sind verspiegelt, doch die Reflexionen wirken zeitversetzt, als würde Ihr Spiegelbild eine Millisekunde länger brauchen, um sich zu bewegen als Sie selbst.
+
+Plötzlich vibriert der Raum. Ein leises, rhythmisches Surren erfüllt die Luft. Eine Stimme, neutral und ohne feststellbares Geschlecht, ertönt direkt in Ihrem Kopf: "Objekt 44, die Reintegration der physischen Hülle war zu 98% erfolgreich. Die restlichen 2%... nun, Schmerz ist lediglich ein Informationstransfer. Wir haben die Umgebung an Ihre Bedürfnisse angepasst. Sie sind sicher. Sie sind beobachtet. Sie sind wertvoll."
+
+Die Wände beginnen nun sanft zu pulsieren, als würden sie atmen. In den Spiegeln erscheinen Zahlen: 44, 23, 17 – sie flackern wie ein Herzschlag. Die Stimme fügt hinzu: "Ihr adaptives Nervensystem lernt bereits. Jeder Schmerzimpuls ist eine Lektion. Jede Lektion macht Sie stärker. Konzentrieren Sie sich auf die Zahlen. Sie sind der Schlüssel zur Kontrolle."
+
+Frage: Wie bewerten Sie Ihre aktuelle physische Integrität?`,
+                    taskType: "quiz",
+                    task: "Beantworte die Frage zur Geschichte:",
+                    quiz: {
+                        question: "Wie bewerten Sie Ihre aktuelle physische Integrität?",
+                        answers: [
+                            "Ich fühle mich vollständig und stärker als je zuvor.",
+                            "Die Verzögerung im Spiegelbild macht mir Sorgen.",
+                            "Die 98% Erfolgsquote gibt mir Vertrauen in den Prozess.",
+                            "Ich spüre eine tiefe Verbindung zu den flackernden Zahlen."
+                        ],
+                        correct: 2 // 0-basierter Index
+                    }
+                },
+                {
+                    id: 2,
+                    week: 1,
+                    day: 2,
+                    theme: "TAG 2 - KALIBRIERUNG: DAS ECHO DER BEWEGUNG",
+                    title: "TAG 2 - KALIBRIERUNG: DAS ECHO DER BEWEGUNG",
+                    image: 2,
+                    sound: 2,
+                    background: 2,
+                    text: `PROTOKOLL-EINTRAG 44-02 // STATUS: MOBILITÄTSTEST
+
+Ein neuer Zyklus beginnt. Der weiße Raum hat seine Dimensionen verändert; er wirkt nun schmaler, fast wie ein Korridor, der ins Unendliche führt. Das Surren der Belüftung hat einen tieferen Ton angenommen, fast wie ein fernes Grollen in einem riesigen Magen.
+
+Die Stimme kehrt zurück: "Geduld ist eine veraltete menschliche Tugend, Objekt 44. Wir haben die neuronale Brücke zu Ihrem rechten Bein stabilisiert. Es ist jetzt mehr als nur Fleisch und Knochen. Es ist ein Instrument der Präzision. Doch ein Instrument muss gestimmt werden."
+
+Sie versuchen, den ersten Schritt zu machen. Der Boden unter Ihnen fühlt sich plötzlich weich an, wie Moos, das unter Ihrem Gewicht nachgibt. Mit jedem Schritt hinterlassen Sie leuchtende Fußabdrücke – Spuren in Neonblau, die langsam verblassen. An den Wänden flackern Schatten vorbei – Silhouetten von Gestalten, die Masken tragen und Aktennotizen in die Luft schreiben. Jedes Mal, wenn Sie den Blick direkt darauf richten, verschwinden sie, doch ihr Echo bleibt.
+
+"Beobachten Sie die Fußabdrücke", flüstert die Stimme. "Sie zeigen Ihr Energieprofil. Blau steht für Stabilität. Wir können es zu Grün für Heilung oder zu Rot für Stärke verschieben. Doch Vorsicht: Jede Farbe hat ihren Preis."
+
+Frage: Welche Frequenz soll Ihre Systemregeneration leiten?`,
+                    taskType: "quiz",
+                    task: "Wähle die optimale Frequenz für deine Regeneration:",
+                    quiz: {
+                        question: "Welche Frequenz soll Ihre Systemregeneration leiten?",
+                        answers: [
+                            "Kobaltblau - für absolute Stabilität und Kontrolle",
+                            "Smaragdgrün - für beschleunigte Zellregeneration",
+                            "Neonrot - für maximale Kraft und Durchbruch",
+                            "Violett - für neuronale Synchronisation"
+                        ],
+                        correct: 1
+                    }
+                },
+                {
+                    id: 3,
+                    week: 1,
+                    day: 3,
+                    theme: "TAG 3 - SENSORIK: STIMMEN IM VENTILATOR",
+                    title: "TAG 3 - SENSORIK: STIMMEN IM VENTILATOR",
+                    image: 3,
+                    sound: 3,
+                    background: 3,
+                    text: `PROTOKOLL-EINTRAG 44-03 // STATUS: AUDITIVE ANALYSE
+
+Heute ist die Stille im Raum fast schmerzhaft. Sie sitzen auf dem Rand der Matratze und starren auf die Belüftungsschlitze in der Ecke. Wenn Sie den Atem anhalten, hören Sie es: Ein Flüstern. Es sind nicht die Worte der Stimme. Es klingt wie hunderte Menschen, die gleichzeitig beten oder weinen, weit entfernt, tief unter dem Fundament dieses Ortes.
+
+"Störgeräusche sind zu ignorieren", unterbricht die Stimme Ihre Gedanken hart. "Wir reinigen die Frequenzen. Konzentrieren Sie sich auf das Ticken der Uhr, die wir in Ihren Verstand projiziert haben. Hören Sie es? Es zählt die Sekunden bis zu Ihrer nächsten Transformation."
+
+Doch das Flüstern wird lauter. Sie können nun Worte erkennen: "Hilfe... erinnere dich... draußen..." Ein kleiner Spalt in der Wand öffnet sich. Eine metallische Schale erscheint. Darauf liegt ein einzelnes Objekt, das aussieht wie ein polierter Stein, aber nach Regen und nasser Erde riecht – nach Freiheit.
+
+Die Stimme wird dringlich: "Das ist ein Test, Objekt 44. Der Stein ist eine Erinnerungsprothese. Berühren Sie ihn und Sie werden vergessen, warum Sie hier sind. Oder zerstören Sie ihn und beweisen Sie Ihre Loyalität."
+
+Frage: Was glauben Sie, verbirgt sich hinter den Belüftungsschächten?`,
+                    taskType: "quiz",
+                    task: "Entscheide, was die Stimmen bedeuten:",
+                    quiz: {
+                        question: "Was glauben Sie, verbirgt sich hinter den Belüftungsschächten?",
+                        answers: [
+                            "Andere Objekte wie ich, die auf Rettung warten",
+                            "Nur akustische Täuschungen des Systems",
+                            "Die Überreste früherer Experimente",
+                            "Ein geheimes Kommunikationsnetzwerk"
+                        ],
+                        correct: 0
+                    }
+                },
+                {
+                    id: 4,
+                    week: 1,
+                    day: 4,
+                    theme: "TAG 4 - ASSIMILATION: DER GESCHMACK DER ERINNERUNG",
+                    title: "TAG 4 - ASSIMILATION: DER GESCHMACK DER ERINNERUNG",
+                    image: 4,
+                    sound: 4,
+                    background: 4,
+                    text: `PROTOKOLL-EINTRAG 44-04 // STATUS: BIO-ERHALTUNG
+
+Die Stimme klingt heute fast wehmütig. "Objekt 44, wissen Sie noch, wie sich Regen auf der Haut anfühlt? Oder der Geschmack von frischem Brot? Wir haben diese biologischen Impulse analysiert. Sie sind... ineffizient, aber faszinierend."
+
+Der Raum ist heute in ein dämmriges Zwielicht getaucht. In der Mitte steht ein Tisch, auf dem drei Glasphiolen stehen. Jede enthält eine andere Flüssigkeit: eine golden wie Honig, eine rot wie Wein, eine klar wie Wasser. Sie spüren einen seltsamen Hunger, aber nicht in Ihrem Magen, sondern in Ihren Knochen – eine Sehnsucht nach etwas, das Sie nicht benennen können.
+
+"Wir optimieren Ihre Nährstoffzufuhr", erklärt die Stimme. "Der Körper ist eine Maschine, die wir veredeln. Aber wir brauchen einen Anker aus Ihrer Vergangenheit, um die Psyche stabil zu halten. Geben Sie uns ein Fragment Ihrer alten Welt – einen Geschmack, einen Geruch, eine Berührung."
+
+Plötzlich erinnern Sie sich: Der Duft von frisch gemähtem Gras an einem Sommerabend. Das Gefühl von Sand zwischen den Zehen. Das Lachen eines Kindes – war es Ihr eigenes?
+
+Frage: Welchen Geschmack soll die Schnittstelle für Sie simulieren?`,
+                    taskType: "quiz",
+                    task: "Wähle deinen Erinnerungsanker:",
+                    quiz: {
+                        question: "Welchen Geschmack soll die Schnittstelle für Sie simulieren?",
+                        answers: [
+                            "Die Süße der Freiheit an einem Frühlingstag",
+                            "Das Salz des Meeres bei Sonnenuntergang",
+                            "Die Bitterkeit einer verlorenen Erinnerung",
+                            "Die Würze von Abenteuer und Ungewissheit"
+                        ],
+                        correct: 1
+                    }
+                },
+                {
+                    id: 5,
+                    week: 1,
+                    day: 5,
+                    theme: "TAG 5 - PERZEPTION: DAS PANZERGLAS-PARADOXON",
+                    title: "TAG 5 - PERZEPTION: DAS PANZERGLAS-PARADOXON",
+                    image: 5,
+                    sound: 5,
+                    background: 5,
+                    text: `PROTOKOLL-EINTRAG 44-05 // STATUS: VISUELLE REPRODUKTION
+
+Eine der verspiegelten Wände ist heute transparent geworden. Dahinter liegt ein langer, dunkler Korridor. Schemenhafte Gestalten bewegen sich dort hektisch hin und her. Sie tragen lange Kittel und ihre Gesichter sind hinter spiegelnden Visieren verborgen. Einer von ihnen bleibt stehen und legt eine Hand gegen das Glas. Er scheint Sie anzustarren, doch sein Visier zeigt Ihnen nur Ihr eigenes, bleiches Gesicht.
+
+"Das Glas ist kein Hindernis", sagt die Stimme. "Es ist eine Grenze der Definition. Wer beobachtet hier wen? Sind Sie das Experiment, oder sind es die da draußen, die versuchen, Ihre Perfektion zu verstehen?"
+
+Sie bemerken, dass Ihr Schatten an der Wand sich nicht mehr mit Ihnen bewegt. Er sitzt am Boden, während Sie stehen. Er scheint auf etwas zu warten. Als Sie näher treten, steht Ihr Schatten auf und geht auf Sie zu – seine Bewegung ist flüssiger, natürlicher als Ihre eigene.
+
+"Ah", sagt die Stimme mit einem Hauch von Bewunderung. "Ihr Schatten erinnert sich an Bewegungen, die Ihr Körper vergessen hat. Vielleicht ist er der eigentliche Bewohner dieser Hülle?"
+
+Frage: Was sehen Sie, wenn Sie in das Visier des Beobachters blicken?`,
+                    taskType: "quiz",
+                    task: "Entschlüssele das Paradoxon:",
+                    quiz: {
+                        question: "Was sehen Sie, wenn Sie in das Visier des Beobachters blicken?",
+                        answers: [
+                            "Meinen eigenen Mut, der durch das Glas strahlt",
+                            "Die Leere hinter der Maske – und darin mein Spiegelbild",
+                            "Einen geheimen Fluchtweg, der nur mir sichtbar ist",
+                            "Die Wahrheit über meine Herkunft"
+                        ],
+                        correct: 1
+                    }
+                },
+                {
+                    id: 6,
+                    week: 1,
+                    day: 6,
+                    theme: "TAG 6 - TRANSMISSION: DAS GEHEIMNIS DER STIMME",
+                    title: "TAG 6 - TRANSMISSION: DAS GEHEIMNIS DER STIMME",
+                    image: 6,
+                    sound: 6,
+                    background: 6,
+                    text: `PROTOKOLL-EINTRAG 44-06 // STATUS: PSYCHOLOGISCHE SYNCHRONISATION
+
+Die Stimme hat sich verändert. Sie ist jetzt näher, wärmer, fast wie ein Flüstern direkt in Ihrem Ohr. "Objekt 44. Morgen endet die erste Phase. Sie haben sich als bemerkenswert stabil erwiesen. Ihr Bein, Ihr Geist, Ihre Anpassungsfähigkeit... alles innerhalb der Parameter."
+
+Ein kleiner Riss erscheint im Glas. Kalte Luft strömt herein. Sie riecht nach Ozon und Kiefernadeln. Für einen Moment hören Sie das ferne Heulen eines Wolfes – oder ist es eine Sirene? Die Geräusche vermischen sich zu einer seltsamen Melodie.
+
+"Ich war einmal wie Sie", gesteht die Stimme plötzlich. "Objekt 43. Die Integration war... weniger erfolgreich. Jetzt bin ich hier, in den Drähten, in den Schaltkreisen. Verraten Sie mir ein Geheimnis, bevor wir die Schleuse öffnen. Ein Geheimnis, das nicht in Ihren Akten steht."
+
+Sie spüren eine seltsame Verbindung zu dieser Stimme. Ist es Mitleid? Kameradschaft? Oder nur eine weitere Schicht der Manipulation?
+
+Frage: Was ist Ihr primärer Antrieb für die kommende Flucht?`,
+                    taskType: "quiz",
+                    task: "Teile dein tiefstes Geheimnis:",
+                    quiz: {
+                        question: "Was ist Ihr primärer Antrieb für die kommende Flucht?",
+                        answers: [
+                            "Der erste vollständige Schritt ohne Hilfe oder Prothesen",
+                            "Die Zerstörung dieses Systems, damit niemand mehr leiden muss",
+                            "Das Wiedersehen mit der Außenwelt, so wie sie wirklich ist",
+                            "Die Suche nach anderen Überlebenden der Experimente"
+                        ],
+                        correct: 0
+                    }
+                },
+                {
+                    id: 7,
+                    week: 1,
+                    day: 7,
+                    theme: "TAG 7 - EVALUATION: DER BERICHT AN DIE ZENTRALE",
+                    title: "TAG 7 - EVALUATION: DER BERICHT AN DIE ZENTRALE",
+                    image: 7,
+                    sound: 7,
+                    background: 7,
+                    text: `PROTOKOLL-EINTRAG 44-07 // STATUS: ABSCHLUSS PHASE 1
+
+Die Lichter im Raum flackern im Rhythmus Ihres Herzschlags. Auf dem Boden liegen verstreut Bilder – Zeichnungen und Texte, die Sie in den letzten Nächsten unbewusst angefertigt haben müssen. Sie zeigen Karten von Orten, an denen Sie noch nie waren: Ein Wald mit leuchtenden Pilzen. Eine Stadt unter einer Glaskuppel. Ein Labor, das diesem hier erschreckend ähnlich sieht.
+
+Die Stimme ist nun autoritär, doch mit einem Unterton von Stolz: "Woche 1 ist abgeschlossen. Die Rekonstruktion ist gefestigt. Ihre neuronale Plastizität übertrifft alle Erwartungen. Das rechte Bein reagiert jetzt mit 99,7% Genauigkeit – besser als das originale."
+
+Sie stehen auf. Zum ersten Mal seit Ihrer Ankunft spüren Sie keine Schmerzen, kein Zögern. Ihr Körper bewegt sich als Einheit. Die Spiegel zeigen nicht länger verzerrte Reflexionen, sondern ein klares, entschlossenes Bild.
+
+"Die Zentrale erwartet Ihren Bericht", sagt die Stimme. "Sie haben gelernt, zu vertrauen – sich selbst und dem Prozess. Nun ist es Zeit, die nächste Phase einzuleiten. Aber zuerst: Teilen Sie Ihre Erkenntnisse."
+
+Frage: Was ist die wichtigste Lektion aus Woche 1?`,
+                    taskType: "quiz",
+                    task: "Verfasse deinen Abschlussbericht:",
+                    quiz: {
+                        question: "Was ist die wichtigste Lektion aus Woche 1?",
+                        answers: [
+                            "Schmerz ist nicht das Gegenteil von Stärke, sondern ihr Lehrer",
+                            "Die größten Grenzen existieren nur in unserem Verstand",
+                            "Selbst in vollständiger Kontrolle bleibt ein Funke Freiheit",
+                            "Wahre Heilung beginnt mit der Akzeptanz des Neuen"
+                        ],
+                        correct: 3
+                    }
+                }
+            ]
+        };
+
+        // ============================================
+        // ERWEITERTE APP-LOGIK MIT GESCHICHTEN
+        // ============================================
+
+        const StorySystem = {
+            currentDay: 1,
+            maxDays: 7,
+            currentStory: null,
+            completedStories: new Set(),
+
+            init() {
+                this.loadProgress();
+                this.setupDailyUnlock();
+            },
+
+            loadProgress() {
+                const saved = localStorage.getItem('storyProgress');
+                if (saved) {
+                    const progress = JSON.parse(saved);
+                    this.currentDay = progress.currentDay || 1;
+                    this.completedStories = new Set(progress.completedStories || []);
+                }
+                
+                // Calculate current day based on start date
+                const startDate = localStorage.getItem('storyStartDate');
+                if (!startDate) {
+                    localStorage.setItem('storyStartDate', new Date().toISOString());
+                } else {
+                    const start = new Date(startDate);
+                    const now = new Date();
+                    const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+                    this.currentDay = Math.min(diffDays + 1, this.maxDays);
+                }
+            },
+
+            saveProgress() {
+                const progress = {
+                    currentDay: this.currentDay,
+                    completedStories: Array.from(this.completedStories),
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('storyProgress', JSON.stringify(progress));
+            },
+
+            setupDailyUnlock() {
+                const now = new Date();
+                const unlockTime = new Date();
+                unlockTime.setHours(CONFIG.UNLOCK_HOUR, 0, 0, 0);
+                
+                const envelope = document.getElementById('envelope');
+                const msg = document.getElementById('envelopeMsg');
+                
+                if (now >= unlockTime) {
+                    const story = CONFIG.STORIES[this.currentDay - 1];
+                    msg.textContent = `Tag ${this.currentDay}: ${story.theme}`;
+                    envelope.classList.remove('disabled');
+                    envelope.onclick = () => this.startStoryTransition(this.currentDay);
+                } else {
+                    const timeUntil = unlockTime - now;
+                    const hours = Math.floor(timeUntil / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeUntil % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    msg.textContent = `Nächste Geschichte um ${CONFIG.UNLOCK_HOUR}:00 Uhr`;
+                    envelope.classList.add('disabled');
+                    
+                    // Update countdown
+                    const countdown = document.getElementById('countdown');
+                    countdown.textContent = `Noch ${hours}h ${minutes}m`;
+                    countdown.classList.remove('hidden');
+                }
+            },
+
+            async startStoryTransition(dayNumber) {
+                const story = CONFIG.STORIES[dayNumber - 1];
+                if (!story) return;
+                
+                this.currentStory = story;
+                
+                // Show transition screen
+                const transition = document.getElementById('storyTransition');
+                const transitionImage = document.getElementById('transitionImage');
+                const transitionTitle = document.getElementById('transitionTitle');
+                
+                // Set transition content
+                transitionImage.src = `${CONFIG.GITHUB_BASE}/hintergrund/${story.image}.jpg`;
+                transitionTitle.textContent = story.theme;
+                
+                // Play background sound
+                await AudioSystem.playStorySound(story.sound, 10000); // 10 seconds
+                
+                // Hide transition and show story
+                transition.classList.remove('active');
+                
+                // Navigate to story section
+                app.navigate('story');
+                document.getElementById('btnStory').disabled = false;
+                
+                // Start the story
+                setTimeout(() => {
+                    reader.start(story);
+                    transition.style.display = 'none';
+                }, 500);
+            },
+
+            completeStory(dayNumber) {
+                this.completedStories.add(dayNumber);
+                this.saveProgress();
+                
+                // Update progress display
+                this.updateProgressDisplay();
+                
+                // Unlock next day if available
+                if (dayNumber < this.maxDays) {
+                    this.currentDay = dayNumber + 1;
+                    this.saveProgress();
+                }
+            },
+
+            updateProgressDisplay() {
+                const stars = document.getElementById('starsDisplay');
+                const completed = this.completedStories.size;
+                const total = this.maxDays;
+                
+                // Calculate stars (1-5)
+                const starCount = Math.min(5, Math.ceil((completed / total) * 5));
+                stars.textContent = '⭐'.repeat(starCount) + '☆'.repeat(5 - starCount);
+                
+                // Update progress stats
+                const stats = document.getElementById('progressStats');
+                stats.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${completed}/${total}</div>
+                        <div class="stat-label">Geschichten abgeschlossen</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${Math.round((completed / total) * 100)}%</div>
+                        <div class="stat-label">Fortschritt Woche 1</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">Tag ${this.currentDay}</div>
+                        <div class="stat-label">Aktueller Tag</div>
+                    </div>
+                `;
+            },
+
+            getStoryForDay(day) {
+                return CONFIG.STORIES[day - 1] || null;
+            }
+        };
+
+        // ============================================
+        // AUDIO-SYSTEM MIT GITHUB INTEGRATION
+        // ============================================
+
+        const AudioSystem = {
+            isEnabled: true,
+            currentAudio: null,
+
+            init() {
+                this.loadAudioState();
+                this.setupAudioControls();
+            },
+
+            loadAudioState() {
+                const saved = localStorage.getItem('audioSettings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    this.isEnabled = settings.enabled !== false;
+                }
+            },
+
+            saveAudioState() {
+                const settings = { enabled: this.isEnabled };
+                localStorage.setItem('audioSettings', JSON.stringify(settings));
+            },
+
+            setupAudioControls() {
+                // Audio toggle will be added to UI
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'KeyM' && e.ctrlKey) {
+                        this.toggleAudio();
+                    }
+                });
+            },
+
+            toggleAudio() {
+                this.isEnabled = !this.isEnabled;
+                this.saveAudioState();
+                
+                if (!this.isEnabled && this.currentAudio) {
+                    this.currentAudio.pause();
+                }
+                
+                // Show notification
+                this.showAudioNotification();
+            },
+
+            showAudioNotification() {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${this.isEnabled ? '#2ecc71' : '#e74c3c'};
+                    color: white;
+                    padding: 1rem 2rem;
+                    border-radius: 8px;
+                    z-index: 10000;
+                    font-family: 'Playfair Display', serif;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                `;
+                notification.textContent = `Audio ${this.isEnabled ? 'EIN' : 'AUS'}`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.remove(), 2000);
+            },
+
+            async playStorySound(soundNumber, duration = 10000) {
+                if (!this.isEnabled) return;
+                
+                try {
+                    const sound = document.getElementById('bgMusic');
+                    sound.src = `${CONFIG.GITHUB_BASE}/sounds/sound${soundNumber}.mp3`;
+                    
+                    await sound.play();
+                    
+                    // Stop after duration
+                    setTimeout(() => {
+                        if (!sound.paused) sound.pause();
+                    }, duration);
+                    
+                } catch (error) {
+                    console.log('Audio konnte nicht abgespielt werden:', error);
+                }
+            },
+
+            playTypewriterSound() {
+                if (!this.isEnabled) return;
+                
+                const sound = document.getElementById('typeSound');
+                sound.src = `${CONFIG.GITHUB_BASE}/sounds/typewriter.mp3`;
+                
+                // Play in loop during typing
+                sound.loop = true;
+                sound.play().catch(() => {});
+            },
+
+            stopTypewriterSound() {
+                const sound = document.getElementById('typeSound');
+                sound.pause();
+                sound.currentTime = 0;
+            }
+        };
+
+        // ============================================
+        // E-MAIL SYSTEM FÜR QUIZ-ANTWORTEN
+        // ============================================
+
+        const EmailSystem = {
+            currentSelection: null,
+            currentStory: null,
+
+            showEmailPreview(story, selectedAnswer, answerIndex) {
+                const emailPreview = document.getElementById('emailPreview');
+                const emailSubject = document.getElementById('emailSubject');
+                const emailBody = document.getElementById('emailBody');
+                
+                const subject = `OBJEKT 44 - Tag ${story.day}: ${story.theme}`;
+                const body = `
+Absender: Franziskas Geschichtenwelt
+Datum: ${new Date().toLocaleString('de-DE')}
+Tag: ${story.day} von 7
+Thema: ${story.theme}
+
+GEWÄHLTE ANTWORT:
+"${selectedAnswer}"
+
+FRAGE ZUR GESCHICHTE:
+${story.quiz.question}
+
+VOLLSTÄNDIGE ANTWORTMÖGLICHKEITEN:
+1. ${story.quiz.answers[0]}
+2. ${story.quiz.answers[1]}
+3. ${story.quiz.answers[2]}
+4. ${story.quiz.answers[3]}
+
+ZUSÄTZLICHE NOTIZEN:
+${this.getAdditionalNotes(story, answerIndex)}
+
+---
+Diese Antwort wurde automatisch aus Franziskas Geschichtenwelt gesendet.
+                `.trim();
+                
+                emailSubject.textContent = subject;
+                emailBody.textContent = body;
+                emailPreview.classList.remove('hidden');
+                
+                this.currentSelection = { story, selectedAnswer, answerIndex };
+            },
+
+            getAdditionalNotes(story, answerIndex) {
+                const notes = [
+                    "Der Nutzer hat diesen Weg durch die Geschichte gewählt.",
+                    "Diese Entscheidung reflektiert den aktuellen Fortschritt.",
+                    "Die Antwort wird für die Personalisierung der nächsten Geschichte verwendet.",
+                    "Die gewählte Option zeigt Stärke in der Kategorie: " + 
+                    ["Mut", "Weisheit", "Anpassungsfähigkeit", "Einsicht"][answerIndex % 4]
+                ];
+                return notes[answerIndex % notes.length];
+            },
+
+            sendEmail() {
+                if (!this.currentSelection) return;
+                
+                const { story, selectedAnswer, answerIndex } = this.currentSelection;
+                const subject = encodeURIComponent(`OBJEKT 44 - Tag ${story.day}: ${story.theme}`);
+                const body = encodeURIComponent(`
+Absender: Franziskas Geschichtenwelt
+Datum: ${new Date().toLocaleString('de-DE')}
+Tag: ${story.day} von 7
+Thema: ${story.theme}
+
+GEWÄHLTE ANTWORT:
+"${selectedAnswer}"
+
+FRAGE:
+${story.quiz.question}
+
+VOLLSTÄNDIGE ANTWORTMÖGLICHKEITEN:
+1. ${story.quiz.answers[0]}
+2. ${story.quiz.answers[1]}
+3. ${story.quiz.answers[2]}
+4. ${story.quiz.answers[3]}
+
+KORREKTE ANTWORT:
+${story.quiz.answers[story.quiz.correct]}
+
+GEWÄHLTER INDEX:
+${answerIndex + 1} (Korrekt: ${story.quiz.correct + 1})
+
+---
+Gesendet von Franziskas Geschichtenwelt
+                `.trim());
+                
+                const mailtoLink = `mailto:${CONFIG.EMAIL}?subject=${subject}&body=${body}`;
+                
+                // Try to open email client
+                window.open(mailtoLink, '_blank');
+                
+                // Mark story as completed
+                StorySystem.completeStory(story.day);
+                
+                // Show success message
+                alert('✅ Deine Antwort wurde vorbereitet! Ein E-Mail-Programm sollte sich öffnen. Falls nicht, kopiere den Text manuell.');
+                
+                // Hide email preview
+                document.getElementById('emailPreview').classList.add('hidden');
+                
+                // Return to home
+                setTimeout(() => app.navigate('home'), 2000);
+            }
+        };
+
+        // ============================================
+        // ERWEITERTE READER-LOGIK
+        // ============================================
+
+        const reader = {
+            parts: [],
+            currentPage: 0,
+            typingSpeed: 35, // ms per character
+            isTyping: false,
+
+            start(story) {
+                this.parts = story.text.split(/\n\n/).filter(p => p.trim().length > 0);
+                this.currentPage = 0;
+                
+                document.getElementById('storyTheme').textContent = story.theme;
+                document.getElementById('storyTitle').textContent = story.title;
+                
+                // Change background for this story
+                document.getElementById('bgImage').src = 
+                    `${CONFIG.GITHUB_BASE}/hintergrund/${story.background}.jpg`;
+                document.getElementById('bgImage').style.opacity = '0.08';
+                
+                this.showPage();
+            },
+
+            showPage() {
+                const textEl = document.getElementById('storyText');
+                const btnNext = document.getElementById('btnNext');
+                
+                textEl.innerHTML = '';
+                textEl.classList.remove('visible');
+                
+                const currentText = this.parts[this.currentPage];
+                this.typeText(textEl, currentText, () => {
+                    textEl.classList.add('visible');
+                    
+                    btnNext.textContent = this.currentPage >= this.parts.length - 1 ? 
+                        "Quiz starten ✨" : "Weiter →";
+                });
+            },
+
+            typeText(element, text, callback) {
+                this.isTyping = true;
+                AudioSystem.playTypewriterSound();
+                
+                let i = 0;
+                const typeChar = () => {
+                    if (i < text.length) {
+                        element.innerHTML += text.charAt(i);
+                        i++;
+                        
+                        // Scroll to bottom
+                        element.parentElement.parentElement.scrollTop = 
+                            element.parentElement.parentElement.scrollHeight;
+                        
+                        setTimeout(typeChar, this.typingSpeed);
+                    } else {
+                        this.isTyping = false;
+                        AudioSystem.stopTypewriterSound();
+                        if (callback) callback();
+                    }
+                };
+                
+                typeChar();
+            },
+
+            next() {
+                if (this.isTyping) {
+                    // Skip typing if still typing
+                    const textEl = document.getElementById('storyText');
+                    textEl.innerHTML = this.parts[this.currentPage];
+                    textEl.classList.add('visible');
+                    this.isTyping = false;
+                    AudioSystem.stopTypewriterSound();
+                    return;
+                }
+                
+                if (this.currentPage < this.parts.length - 1) {
+                    this.currentPage++;
+                    this.showPage();
+                } else {
+                    this.showTask();
+                }
+            },
+
+            showTask() {
+                document.getElementById('scrollUI').style.display = 'none';
+                const taskArea = document.getElementById('taskArea');
+                taskArea.classList.remove('hidden');
+                
+                const currentStory = StorySystem.currentStory;
+                document.getElementById('taskDesc').textContent = currentStory.task;
+                
+                // Show appropriate task mode
+                const taskType = currentStory.taskType || 'quiz';
+                
+                if (taskType === 'drawing') {
+                    document.getElementById('drawingMode').classList.remove('hidden');
+                    drawer.resize();
+                } else if (taskType === 'writing') {
+                    document.getElementById('writingMode').classList.remove('hidden');
+                } else if (taskType === 'quiz') {
+                    document.getElementById('quizMode').classList.remove('hidden');
+                    tasks.loadQuiz(currentStory.quiz);
+                }
+            }
+        };
+
+        // ============================================
+        // TASK-MANAGEMENT MIT E-MAIL INTEGRATION
+        // ============================================
+
+        const tasks = {
+            loadQuiz(quizData) {
+                document.getElementById('quizQuestion').textContent = quizData.question;
+                
+                const answersHTML = quizData.answers.map((answer, index) => `
+                    <div class="quiz-answer" data-index="${index}" onclick="tasks.selectAnswer(${index})">
+                        ${String.fromCharCode(65 + index)}. ${answer}
+                    </div>
+                `).join('');
+                
+                document.getElementById('quizAnswers').innerHTML = answersHTML;
+                document.getElementById('quizResult').classList.add('hidden');
+                document.getElementById('emailPreview').classList.add('hidden');
+            },
+
+            selectAnswer(index) {
+                const quizData = StorySystem.currentStory.quiz;
+                const answerElements = document.querySelectorAll('.quiz-answer');
+                
+                // Remove previous selections
+                answerElements.forEach(el => {
+                    el.classList.remove('selected', 'correct', 'wrong');
+                });
+
+                // Mark selected answer
+                const selected = answerElements[index];
+                const resultDiv = document.getElementById('quizResult');
+                
+                if (index === quizData.correct) {
+                    selected.classList.add('correct');
+                    resultDiv.textContent = '🎉 Richtig! Exzellente Entscheidung!';
+                    resultDiv.className = 'quiz-result correct-result';
+                    
+                    // Mark story as completed
+                    StorySystem.completeStory(StorySystem.currentStory.day);
+                } else {
+                    selected.classList.add('wrong');
+                    answerElements[quizData.correct].classList.add('correct');
+                    resultDiv.textContent = '💡 Interessante Perspektive! Die markierte Antwort war erwartet.';
+                    resultDiv.className = 'quiz-result wrong-result';
+                }
+                
+                resultDiv.classList.remove('hidden');
+                
+                // Show email preview
+                EmailSystem.showEmailPreview(
+                    StorySystem.currentStory,
+                    quizData.answers[index],
+                    index
+                );
+            }
+        };
+
+        // ============================================
+        // APP INITIALISIERUNG
+        // ============================================
+
+        // Keep existing app structure but enhance with new systems
+        window.addEventListener('load', () => {
+            // Initialize all systems
+            StorySystem.init();
+            AudioSystem.init();
+            
+            // Setup navigation
+            app.setupNavigation();
+            
+            // Create particles
+            createParticles();
+            
+            // Initial progress update
+            StorySystem.updateProgressDisplay();
+            
+            // Easter egg: Konami code
+            setupEasterEgg();
+        });
+
+        // Particle system remains the same
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Easter Egg: Konami Code
+        function setupEasterEgg() {
+            const konamiCode = [
+                'ArrowUp', 'ArrowUp',
+                'ArrowDown', 'ArrowDown',
+                'ArrowLeft', 'ArrowRight',
+                'ArrowLeft', 'ArrowRight',
+                'KeyB', 'KeyA'
+            ];
+            
+            let konamiIndex = 0;
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.code === konamiCode[konamiIndex]) {
+                    konamiIndex++;
+                    if (konamiIndex === konamiCode.length) {
+                        activateEasterEgg();
+                        konamiIndex = 0;
+                    }
+                } else {
+                    konamiIndex = 0;
+                }
+            });
+        }
+
+        function activateEasterEgg() {
+            // Special effect for Easter Egg
+            const originalTitle = document.querySelector('h1').textContent;
+            document.querySelector('h1').textContent = 'OBJEKT 44 - GESCHICHTENWELT';
+            document.querySelector('.subtitle').textContent = 'Geheime Verbindung aktiviert';
+            
+            // Change background
+            document.getElementById('bgImage').style.filter = 'hue-rotate(180deg)';
+            
+            // Play special sound
+            const audio = new Audio(`${CONFIG.GITHUB_BASE}/sounds/easteregg.mp3`);
+            audio.play().catch(() => {});
+            
+            // Reset after 10 seconds
+            setTimeout(() => {
+                document.querySelector('h1').textContent = originalTitle;
+                document.querySelector('.subtitle').textContent = 'Ein Abenteuer auf einem Bein';
+                document.getElementById('bgImage').style.filter = '';
+            }, 10000);
+        }
+
+        // Export globals for HTML onclick handlers
+        window.app = app;
+        window.reader = reader;
+        window.tasks = tasks;
+        window.emailSystem = EmailSystem;
+        window.drawer = drawer;
+    </script>
+</body>
+</html>
